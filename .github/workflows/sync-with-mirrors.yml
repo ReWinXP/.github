@@ -1,0 +1,63 @@
+name: Automatic sync with read-only mirrors
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '42 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        repo:
+#         - {github: "", bitbucket: "", codeberg: "", gitlab: "", hubmosru: "" }
+          - {github: "https://github.com/rewinxp/.github.git", bitbucket: "git@bitbucket.org:rewinxp/.github.git", codeberg: "git@codeberg.org:rewinxp/.github.git",  gitlab: "git@gitlab.com:rewinxp/dot-github.git", hubmosru: "hub.mos.ru/rewinxp/.github.git"}
+          - {github: "https://github.com/rewinxp/launcher.git", bitbucket: "git@bitbucket.org:rewinxp/launcher.git", codeberg: "git@codeberg.org:rewinxp/launcher.git",  gitlab: "git@gitlab.com:rewinxp/launcher.git", hubmosru: "git@hub.mos.ru:rewinxp/launcher.git"}
+          - {github: "https://github.com/rewinxp/builder.git", bitbucket: "git@bitbucket.org:rewinxp/builder.git", codeberg: "git@codeberg.org:rewinxp/builder.git",  gitlab: "git@gitlab.com:rewinxp/builder.git", hubmosru: "git@hub.mos.ru:rewinxp/builder.git"}
+
+    steps:
+      - name: Set up SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITLAB_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -t rsa,ed25519 bitbucket.org >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa,ed25519 codeberg.org >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa,ed25519 github.com >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa,ed25519 gitlab.com >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa,ed25519 hub.mos.ru >> ~/.ssh/known_hosts
+
+      - name: Clone repository as bare
+        run: |
+          git clone --bare ${{ matrix.repo.github }} repo-bare
+
+      - name: Push to BitBucket
+        run: |
+          cd repo-bare
+          git remote add bb ${{ matrix.repo.bitbucket }}
+          git push bb --prune +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+
+      - name: Push to CodeBerg
+        run: |
+          cd repo-bare
+          git remote add cb ${{ matrix.repo.codeberg }}
+          git push cb --prune +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+
+      - name: Push to GitLab
+        run: |
+          cd repo-bare
+          git remote add gl ${{ matrix.repo.gitlab }}
+          git push gl --prune +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+
+      - name: Push to HubMosRu
+        run: |
+          cd repo-bare
+          git remote add gl ${{ matrix.repo.hubmosru }}
+          git push gl --prune +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
