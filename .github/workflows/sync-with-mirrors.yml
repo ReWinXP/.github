@@ -38,11 +38,11 @@ jobs:
         run: |
           git clone --bare ${{ matrix.repo.github }} repo-bare
 
-      - name: Push to BitBucket
-        run: |
-          cd repo-bare
-          git remote add bb ${{ matrix.repo.bitbucket }}
-          git push bb --prune +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+#      - name: Push to BitBucket
+#        run: |
+#          cd repo-bare
+#          git remote add bb ${{ matrix.repo.bitbucket }}
+#          git push bb --prune +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
 
       - name: Push to CodeBerg
         run: |
